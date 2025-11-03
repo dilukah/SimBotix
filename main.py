@@ -1,6 +1,6 @@
 import time
 import pybullet as p
-from robot_configs import ROBOT_CONFIGS
+from config import CONFIGS
 from robot_utils import (
     connect_gui,
     load_robot,
@@ -9,22 +9,32 @@ from robot_utils import (
     create_manual_sliders,
     read_manual_sliders,
     draw_target_marker,
+    read_gripper_slider,
+    create_gripper_slider,
+    control_gripper,
 )
 
 # Setup
-config = ROBOT_CONFIGS["panda"]
-connect_gui()
-robot_id = load_robot(config)
+config = CONFIGS["panda"]
+connect_gui(config.get("environment", None))
+robot_id, table_height = load_robot(config)
 ee_index = config["end_effector_index"]
 joint_indices = config["joint_indices"]
+env = config.get("environment", {})
+table_enabled = env.get("table", {}).get("enabled", False)
 
 # Create sliders
 sx, sy, sz, mode_toggle, sroll, spitch, syaw = create_manual_sliders()
+sgrip = create_gripper_slider() 
 
 # Main simulation loop
 while True:
     p.stepSimulation()
     x, y, z, ik_mode, roll, pitch, yaw = read_manual_sliders(sx, sy, sz, mode_toggle, sroll, spitch, syaw)
+    if table_enabled:
+        z += table_height
+
+    grip_open = read_gripper_slider(sgrip)
 
     # Compute IK
     if ik_mode == 0:
@@ -41,6 +51,6 @@ while True:
             targetPosition=joint_poses[j],
             force=200,
         )
-
+    control_gripper(robot_id, open=grip_open)
     draw_target_marker(x, y, z)
     time.sleep(1.0 / 240.0)
