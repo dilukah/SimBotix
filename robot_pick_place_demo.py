@@ -57,8 +57,13 @@ def move_to(target, steps=120, grip_open=1.0, phase=""):
         # Record full step
         joint_positions = [p.getJointState(robot_id, j)[0] for j in joint_indices]
         joint_velocities = [p.getJointState(robot_id, j)[1] for j in joint_indices]
-        obj_pos, _ = p.getBasePositionAndOrientation(obj_id)
-        obj_vel, _ = p.getBaseVelocity(obj_id)
+
+        if obj_id is not None:
+            obj_pos, _ = p.getBasePositionAndOrientation(obj_id)
+            obj_vel, _ = p.getBaseVelocity(obj_id)
+        else:
+            obj_pos = [0.0, 0.0, 0.0]
+            obj_vel = [0.0, 0.0, 0.0]
 
         step_data.append({
             "phase": phase,
